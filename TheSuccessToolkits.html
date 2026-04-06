@@ -434,37 +434,77 @@ body{font-family:'DM Sans',sans-serif;background:var(--light);color:var(--dark);
 <div class="toast" id="toast"></div>
 
 <script src="content.js"></script>
+<script src="/api-client.js"></script>
 <script>
 // Content loaded from content.js
 
+// ═══════════════════════════════════════════════════
+// DATA LAYER — Uses API backend with localStorage fallback
+// ═══════════════════════════════════════════════════
+let isUsingAPI = false;
 
-// ═══════════════════════════════════════════════════
-// PERSISTENCE (localStorage — // DB: hooks for backend)
-// ═══════════════════════════════════════════════════
-function loadState() {
+async function loadState() {
+  // If user is authenticated, load from API
+  if (state.user && API.token) {
+    try {
+      isUsingAPI = true;
+      const progress = await API.getProgress();
+      if (progress) {
+        return {
+          completed: new Set(progress.completed || []),
+          quizzesPassed: new Set(progress.quizzesPassed || []),
+          notes: {},
+          exercises: {},
+          xp: progress.xp || 0
+        };
+      }
+    } catch (e) {
+      console.error('Failed to load from API:', e);
+    }
+  }
+
+  // Fallback to localStorage
   try {
     const s = JSON.parse(localStorage.getItem('tst_v3') || '{}');
-    return { completed: new Set(s.completed||[]), quizzesPassed: new Set(s.quizzesPassed||[]),
-      notes: s.notes||{}, exercises: s.exercises||{}, xp: s.xp||0 };
-  } catch(e) { return { completed:new Set(), quizzesPassed:new Set(), notes:{}, exercises:{}, xp:0 }; }
-}
-function saveState() {
-  try {
-    // DB: sync state.completed, state.quizzesPassed, state.notes, state.exercises, state.xp for user
-    localStorage.setItem('tst_v3', JSON.stringify({
-      completed:[...state.completed], quizzesPassed:[...state.quizzesPassed],
-      notes:state.notes, exercises:state.exercises, xp:state.xp }));
-  } catch(e) {}
+    return {
+      completed: new Set(s.completed || []),
+      quizzesPassed: new Set(s.quizzesPassed || []),
+      notes: s.notes || {},
+      exercises: s.exercises || {},
+      xp: s.xp || 0
+    };
+  } catch (e) {
+    return { completed: new Set(), quizzesPassed: new Set(), notes: {}, exercises: {}, xp: 0 };
+  }
 }
 
-const _ls = loadState();
+async function saveState() {
+  try {
+    if (isUsingAPI && state.user) {
+      // Save to API (will be done incrementally via specific endpoints)
+      return;
+    }
+    // Fallback to localStorage
+    localStorage.setItem('tst_v3', JSON.stringify({
+      completed: [...state.completed],
+      quizzesPassed: [...state.quizzesPassed],
+      notes: state.notes,
+      exercises: state.exercises,
+      xp: state.xp
+    }));
+  } catch (e) {
+    console.error('Error saving state:', e);
+  }
+}
+
+const _ls = {};
 const state = {
   user: null,          // DB: user profile
-  completed: _ls.completed,
-  quizzesPassed: _ls.quizzesPassed,
-  notes: _ls.notes,
-  exercises: _ls.exercises,
-  xp: _ls.xp,
+  completed: new Set(),
+  quizzesPassed: new Set(),
+  notes: {},
+  exercises: {},
+  xp: 0,
   mi: 0, li: 0, step: 0,
   answers: {}
 };
@@ -483,13 +523,23 @@ function totalModsDone() { return MODULES.filter((_,i) => modDone(i)).length; }
 // ═══════════════════════════════════════════════════
 // AUTH
 // ═══════════════════════════════════════════════════
-function loginUser(name, email) {
+async function loginUser(name, email) {
   state.user = {name, email}; // DB: authenticate, load profile
+  API.setToken('temp-token'); // Will be replaced with real token for registered users
   const init = name.split(' ').map(n=>n[0]).join('').toUpperCase().slice(0,2);
   document.getElementById('user-avatar').textContent = init;
   document.getElementById('user-name-display').textContent = name;
   document.getElementById('auth-screen').style.display = 'none';
   document.getElementById('app').style.display = 'block';
+
+  // Load user state from API/localStorage
+  const loadedState = await loadState();
+  state.completed = loadedState.completed;
+  state.quizzesPassed = loadedState.quizzesPassed;
+  state.notes = loadedState.notes;
+  state.exercises = loadedState.exercises;
+  state.xp = loadedState.xp;
+
   buildSidebar();
   showView('dashboard');
   showToast('Welcome back, ' + name.split(' ')[0] + '! 👋');
@@ -548,6 +598,7 @@ function showView(view) {
   document.querySelectorAll('.nav-tab').forEach(t => t.classList.toggle('active', t.dataset.view===view));
   if (view==='dashboard') { buildDashboard(); updateProgress(); }
   if (view==='certificate') renderCertificate();
+  if (view==='community') loadCommunityPosts();
 }
 
 function buildDashboard() {
@@ -763,6 +814,12 @@ function submitQuiz(lesson) {
   res.className='quiz-result show '+(passed?'pass':'fail');
   if(passed) {
     state.quizzesPassed.add(lesson.id); state.completed.add(lesson.id); state.xp+=lesson.xp;
+
+    // Save to API if available
+    if (isUsingAPI && state.user) {
+      API.recordQuizPassed(lesson.id, lesson.xp);
+    }
+
     saveState(); // DB: save quiz pass + completion + XP
     res.innerHTML=`<strong>🎉 ${correct}/${total} correct — well done!</strong><p>This lesson is now marked complete.</p>`;
     refreshCompletionUI(lesson);
@@ -786,6 +843,11 @@ function markComplete() {
   const lesson=MODULES[state.mi].lessons[state.li];
   if(state.completed.has(lesson.id)) return;
   state.completed.add(lesson.id); state.xp+=lesson.xp;
+
+  // Save to API if available
+  if (isUsingAPI && state.user) {
+    API.markLessonComplete(lesson.id, lesson.xp);
+  }
   saveState(); // DB: save lesson completion + XP
   refreshCompletionUI(lesson);
   updateProgress();
@@ -815,22 +877,75 @@ function navLesson(dir) {
 // ═══════════════════════════════════════════════════
 // COMMUNITY
 // ═══════════════════════════════════════════════════
+async function loadCommunityPosts() {
+  if (isUsingAPI && state.user) {
+    const posts = await API.getCommunityPosts();
+    if (posts && Array.isArray(posts)) {
+      const postsContainer = document.getElementById('community-posts');
+      postsContainer.innerHTML = posts.map(post => `
+        <div class="community-post">
+          <div class="post-author">
+            <div class="post-avatar">${post.userName?.charAt(0) || 'U'}</div>
+            <div>
+              <div class="post-name">${post.userName}</div>
+              <div class="post-time">${new Date(post.created_at).toLocaleDateString()}</div>
+            </div>
+          </div>
+          <div class="post-body">${post.content}</div>
+          <div class="post-actions">
+            <button class="post-btn like-btn" data-post-id="${post.id}">❤️ ${post.likes} Like${post.likes !== 1 ? 's' : ''}</button>
+            <button class="post-btn">💬 Reply</button>
+          </div>
+        </div>
+      `).join('');
+
+      // Add event listeners to like buttons
+      postsContainer.querySelectorAll('.like-btn').forEach(btn => {
+        btn.addEventListener('click', function() { likePost(this); });
+      });
+    }
+  }
+}
+
+// ═══════════════════════════════════════════════════
+// COMMUNITY
+// ═══════════════════════════════════════════════════
 function addPost(text) {
   const init=state.user?state.user.name.split(' ').map(n=>n[0]).join('').toUpperCase().slice(0,2):'ME';
   const name=state.user?state.user.name:'You';
   const p=document.createElement('div'); p.className='community-post';
-  p.innerHTML=`<div class="post-author"><div class="post-avatar">${init}</div><div><div class="post-name">${name}</div><div class="post-time">Just now</div></div></div>
-    <div class="post-body">${text}</div>
-    <div class="post-actions"><button class="post-btn like-btn">❤️ 0 Likes</button><button class="post-btn">💬 Reply</button></div>`;
-  p.querySelector('.like-btn').addEventListener('click',function(){likePost(this);});
-  // DB: save post to community feed
-  document.getElementById('community-posts').prepend(p);
+
+  // Create post via API if available
+  if (isUsingAPI && state.user) {
+    API.createPost(text).then(post=>{
+      if (post) {
+        p.innerHTML=`<div class="post-author"><div class="post-avatar">${init}</div><div><div class="post-name">${post.userName}</div><div class="post-time">Just now</div></div></div>
+          <div class="post-body">${text}</div>
+          <div class="post-actions"><button class="post-btn like-btn" data-post-id="${post.id}">❤️ ${post.likes} Likes</button><button class="post-btn">💬 Reply</button></div>`;
+        p.querySelector('.like-btn').addEventListener('click',function(){likePost(this);});
+        document.getElementById('community-posts').prepend(p);
+      }
+    });
+  } else {
+    // Fallback for demo mode
+    p.innerHTML=`<div class="post-author"><div class="post-avatar">${init}</div><div><div class="post-name">${name}</div><div class="post-time">Just now</div></div></div>
+      <div class="post-body">${text}</div>
+      <div class="post-actions"><button class="post-btn like-btn">❤️ 0 Likes</button><button class="post-btn">💬 Reply</button></div>`;
+    p.querySelector('.like-btn').addEventListener('click',function(){likePost(this);});
+    document.getElementById('community-posts').prepend(p);
+  }
+
   showToast('Posted! 💬');
 }
 
 function likePost(btn) {
   const m=btn.textContent.match(/(\d+)/);
   if(m){const c=+m[1]+1; btn.textContent='❤️ '+c+' Like'+(c!==1?'s':''); btn.style.color='var(--pink)';}
+  // Get post ID from button or parent
+  const postId = btn.dataset.postId || btn.closest('.post-actions')?.dataset.postId;
+  if (postId && isUsingAPI && state.user) {
+    API.likePost(postId);
+  }
   // DB: save like for user
 }
 
@@ -894,27 +1009,48 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('tab-login').classList.remove('active');
   });
   // Login
-  document.getElementById('btn-login').addEventListener('click',()=>{
+  document.getElementById('btn-login').addEventListener('click',async ()=>{
     const email=document.getElementById('login-email').value.trim();
     const pass=document.getElementById('login-password').value;
     if(!email||!pass) return showToast('Please fill in all fields.');
-    const name=email.split('@')[0].replace(/[._-]/g,' ').replace(/\b\w/g,l=>l.toUpperCase());
-    loginUser(name||'Learner', email);
+
+    // Try to login via API
+    const result = await API.login(email, pass);
+    if (result && result.token && result.user) {
+      API.setToken(result.token);
+      isUsingAPI = true;
+      loginUser(result.user.name, result.user.email);
+    } else {
+      // Fallback to demo mode
+      const name=email.split('@')[0].replace(/[._-]/g,' ').replace(/\b\w/g,l=>l.toUpperCase());
+      loginUser(name||'Learner', email);
+    }
   });
   document.getElementById('login-password').addEventListener('keydown',e=>{
     if(e.key==='Enter') document.getElementById('btn-login').click();
   });
   // Register
-  document.getElementById('btn-register').addEventListener('click',()=>{
+  document.getElementById('btn-register').addEventListener('click',async ()=>{
     const name=document.getElementById('reg-name').value.trim();
     const email=document.getElementById('reg-email').value.trim();
     const pass=document.getElementById('reg-password').value;
     if(!name||!email||!pass) return showToast('Please fill in all fields.');
-    loginUser(name, email);
+
+    // Try to register via API
+    const result = await API.register(email, pass, name);
+    if (result && result.token && result.user) {
+      API.setToken(result.token);
+      isUsingAPI = true;
+      loginUser(result.user.name, result.user.email);
+    } else {
+      showToast('Registration failed. Please try again.');
+    }
   });
   // Logout
   document.getElementById('btn-logout').addEventListener('click',()=>{
     state.user=null; // DB: clear session
+    isUsingAPI = false;
+    API.clearToken();
     document.getElementById('auth-screen').style.display='flex';
     document.getElementById('app').style.display='none';
   });
@@ -928,9 +1064,16 @@ document.addEventListener('DOMContentLoaded', function() {
   document.getElementById('btn-next').addEventListener('click',()=>navLesson(1));
   document.getElementById('mark-btn').addEventListener('click',markComplete);
   // Notes
-  document.getElementById('btn-save-note').addEventListener('click',()=>{
+  document.getElementById('btn-save-note').addEventListener('click',async ()=>{
     const lesson=MODULES[state.mi].lessons[state.li];
-    state.notes[lesson.id]=document.getElementById('lesson-notes').value;
+    const content=document.getElementById('lesson-notes').value;
+    state.notes[lesson.id]=content;
+
+    // Save to API if available
+    if (isUsingAPI && state.user) {
+      await API.saveNote(lesson.id, content);
+    }
+
     saveState(); // DB: save note for user + lesson
     const s=document.getElementById('notes-saved');
     s.classList.add('show'); setTimeout(()=>s.classList.remove('show'),2000);
