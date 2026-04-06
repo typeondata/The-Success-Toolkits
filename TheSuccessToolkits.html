@@ -1,0 +1,960 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Success Toolkits Academy</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=DM+Serif+Display:ital@0;1&display=swap" rel="stylesheet">
+<style>
+:root{--pink:#e8185a;--coral:#f04b2e;--grad:linear-gradient(135deg,#e8185a 0%,#f04b2e 100%);--dark:#1a1a1a;--mid:#555;--light:#f7f5f3;--white:#ffffff;--border:#ebebeb;--success:#27ae60;--warning:#f39c12;--info:#3498db;--shadow:0 4px 24px rgba(0,0,0,.07);--shadow-lg:0 12px 48px rgba(232,24,90,.15);}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'DM Sans',sans-serif;background:var(--light);color:var(--dark);min-height:100vh;overflow-x:hidden;}
+/* AUTH */
+#auth-screen{position:fixed;inset:0;z-index:1000;background:var(--light);display:flex;align-items:center;justify-content:center;}
+.auth-wrap{width:100%;max-width:460px;padding:20px;}
+.auth-logo{display:flex;align-items:center;gap:12px;margin-bottom:36px;justify-content:center;}
+.auth-logo span{font-family:'DM Serif Display',serif;font-size:20px;color:var(--dark);line-height:1.2;}
+.auth-card{background:var(--white);border-radius:24px;padding:44px 38px;box-shadow:var(--shadow);}
+.auth-card h1{font-family:'DM Serif Display',serif;font-size:28px;margin-bottom:5px;}
+.auth-card>p{color:var(--mid);font-size:14px;margin-bottom:28px;line-height:1.5;}
+.auth-tabs{display:flex;background:var(--light);border-radius:10px;padding:4px;margin-bottom:26px;}
+.auth-tab{flex:1;padding:9px;text-align:center;border:none;background:none;border-radius:8px;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;color:var(--mid);transition:all .2s;}
+.auth-tab.active{background:var(--white);color:var(--dark);box-shadow:0 2px 8px rgba(0,0,0,.08);}
+.form-group{margin-bottom:16px;}
+.form-group label{display:block;font-size:11px;font-weight:700;color:var(--dark);margin-bottom:5px;letter-spacing:.04em;text-transform:uppercase;}
+.form-group input{width:100%;padding:13px 15px;border:1.5px solid var(--border);border-radius:10px;font-family:'DM Sans',sans-serif;font-size:14px;color:var(--dark);outline:none;transition:border-color .2s;background:var(--white);}
+.form-group input:focus{border-color:var(--pink);}
+.btn-primary{width:100%;padding:14px;background:var(--grad);color:var(--white);border:none;border-radius:12px;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:600;cursor:pointer;transition:all .2s;box-shadow:0 4px 16px rgba(232,24,90,.3);margin-top:6px;}
+.btn-primary:hover{transform:translateY(-1px);box-shadow:0 8px 24px rgba(232,24,90,.35);}
+.auth-note{text-align:center;margin-top:18px;font-size:12px;color:var(--mid);}
+/* APP */
+#app{display:none;min-height:100vh;}
+/* SIDEBAR */
+.sidebar{position:fixed;left:0;top:0;bottom:0;width:296px;background:var(--white);border-right:1px solid var(--border);display:flex;flex-direction:column;z-index:100;overflow:hidden;}
+.sidebar-header{padding:22px 22px 14px;border-bottom:1px solid var(--border);}
+.sidebar-logo{display:flex;align-items:center;gap:10px;}
+.sidebar-logo span{font-family:'DM Serif Display',serif;font-size:15px;line-height:1.2;color:var(--dark);}
+.logo-svg{width:32px;height:32px;}
+.sidebar-progress{padding:12px 22px;border-bottom:1px solid var(--border);}
+.progress-label{display:flex;justify-content:space-between;font-size:10px;font-weight:700;color:var(--mid);text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px;}
+.progress-bar{height:4px;background:var(--border);border-radius:2px;overflow:hidden;}
+.progress-fill{height:100%;background:var(--grad);border-radius:2px;transition:width .4s ease;}
+.sidebar-nav{flex:1;overflow-y:auto;padding:6px 0;}
+.sidebar-nav::-webkit-scrollbar{width:3px;}
+.sidebar-nav::-webkit-scrollbar-thumb{background:var(--border);}
+.module-header{padding:8px 22px 4px;display:flex;align-items:center;justify-content:space-between;cursor:pointer;}
+.module-header-inner{display:flex;align-items:center;gap:7px;}
+.mod-num{width:19px;height:19px;border-radius:50%;background:var(--light);display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:700;color:var(--mid);flex-shrink:0;}
+.mod-num.done{background:var(--grad);color:var(--white);}
+.mod-name{font-size:11px;font-weight:600;color:var(--dark);}
+.mod-toggle{font-size:9px;color:var(--mid);transition:transform .2s;}
+.mod-toggle.open{transform:rotate(180deg);}
+.lesson-list{display:none;padding:1px 0 4px;}
+.lesson-list.open{display:block;}
+.lesson-item{padding:6px 22px 6px 48px;display:flex;align-items:center;gap:8px;cursor:pointer;transition:background .15s;position:relative;}
+.lesson-item:hover{background:var(--light);}
+.lesson-item.active{background:#fef0f3;}
+.lesson-item.active::before{content:'';position:absolute;left:0;top:3px;bottom:3px;width:3px;background:var(--grad);border-radius:0 2px 2px 0;}
+.lesson-check{width:13px;height:13px;border:1.5px solid var(--border);border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:all .2s;}
+.lesson-check.done{background:var(--grad);border-color:transparent;}
+.lesson-check.done::after{content:'\2713';font-size:7px;color:white;font-weight:700;}
+.lesson-name{font-size:11px;color:var(--mid);line-height:1.3;}
+.lesson-item.active .lesson-name{color:var(--dark);font-weight:500;}
+.sidebar-user{padding:12px 22px;border-top:1px solid var(--border);display:flex;align-items:center;gap:9px;}
+.user-avatar{width:32px;height:32px;border-radius:50%;background:var(--grad);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:white;flex-shrink:0;}
+.user-name{font-size:12px;font-weight:600;color:var(--dark);}
+.user-role{font-size:10px;color:var(--mid);}
+.logout-btn{margin-left:auto;background:none;border:none;cursor:pointer;color:var(--mid);font-size:14px;padding:4px;}
+/* MAIN */
+.main{margin-left:296px;min-height:100vh;display:flex;flex-direction:column;}
+.nav-tabs{display:flex;border-bottom:1px solid var(--border);background:var(--white);padding:0 44px;position:sticky;top:0;z-index:50;}
+.nav-tab{padding:14px 16px;border:none;background:none;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;color:var(--mid);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px;transition:all .15s;}
+.nav-tab.active{color:var(--pink);border-bottom-color:var(--pink);}
+.nav-tab:hover:not(.active){color:var(--dark);}
+/* DASHBOARD */
+.dashboard-wrap{padding:36px 44px;}
+.dashboard-hero{background:var(--dark);border-radius:22px;padding:40px 44px;margin-bottom:30px;position:relative;overflow:hidden;color:var(--white);}
+.dashboard-hero::before{content:'';position:absolute;right:-50px;top:-50px;width:230px;height:230px;background:var(--grad);border-radius:50%;opacity:.13;}
+.hero-tag{display:inline-block;background:rgba(255,255,255,.1);color:rgba(255,255,255,.7);font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;padding:4px 10px;border-radius:6px;margin-bottom:12px;}
+.dashboard-hero h2{font-family:'DM Serif Display',serif;font-size:30px;line-height:1.15;margin-bottom:8px;}
+.dashboard-hero p{font-size:13px;color:rgba(255,255,255,.6);max-width:440px;line-height:1.6;margin-bottom:20px;}
+.btn-start{padding:12px 22px;background:var(--grad);color:white;border:none;border-radius:11px;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;cursor:pointer;box-shadow:0 4px 18px rgba(232,24,90,.38);transition:all .2s;}
+.btn-start:hover{transform:translateY(-2px);}
+/* STATS */
+.stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:13px;margin-bottom:30px;}
+.stat-card{background:var(--white);border-radius:15px;padding:19px;box-shadow:var(--shadow);}
+.stat-icon{width:35px;height:35px;border-radius:9px;background:var(--light);display:flex;align-items:center;justify-content:center;font-size:16px;margin-bottom:11px;}
+.stat-value{font-family:'DM Serif Display',serif;font-size:26px;color:var(--dark);line-height:1;margin-bottom:2px;}
+.stat-label{font-size:11px;color:var(--mid);}
+/* SECTION */
+.section-heading{font-family:'DM Serif Display',serif;font-size:21px;color:var(--dark);margin-bottom:5px;}
+.section-sub{font-size:13px;color:var(--mid);margin-bottom:18px;line-height:1.55;}
+/* COURSES GRID */
+.courses-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:18px;margin-bottom:34px;}
+.course-card{background:var(--white);border-radius:18px;overflow:hidden;box-shadow:var(--shadow);border:1.5px solid transparent;transition:all .2s;cursor:pointer;}
+.course-card:hover:not(.locked){transform:translateY(-2px);border-color:var(--pink);box-shadow:0 8px 30px rgba(232,24,90,.12);}
+.course-card.locked{cursor:default;opacity:.62;}
+.course-banner{height:5px;background:var(--grad);}
+.course-banner.grey{background:var(--border);}
+.course-body{padding:20px;}
+.course-header{display:flex;align-items:flex-start;gap:11px;margin-bottom:9px;}
+.course-icon{width:44px;height:44px;border-radius:12px;background:var(--grad);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;}
+.course-icon.grey{background:var(--light);}
+.course-card h3{font-family:'DM Serif Display',serif;font-size:16px;line-height:1.2;color:var(--dark);margin-bottom:2px;}
+.course-meta{font-size:11px;color:var(--mid);}
+.course-desc{font-size:12px;color:var(--mid);line-height:1.55;margin-bottom:13px;}
+.course-foot{display:flex;align-items:center;justify-content:space-between;}
+.cpbar{flex:1;height:4px;background:var(--light);border-radius:2px;overflow:hidden;margin-right:9px;}
+.cpbar .fill{height:100%;background:var(--grad);border-radius:2px;}
+.cplabel{font-size:11px;font-weight:600;color:var(--mid);white-space:nowrap;}
+.locked-badge{font-size:11px;font-weight:600;color:var(--mid);background:var(--light);padding:4px 9px;border-radius:18px;}
+/* MODULE BREAKDOWN */
+.mod-breakdown{background:var(--white);border-radius:18px;padding:24px;box-shadow:var(--shadow);margin-bottom:34px;}
+.mod-breakdown-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;}
+.mod-breakdown-head h3{font-family:'DM Serif Display',serif;font-size:18px;color:var(--dark);}
+.mods-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:9px;}
+.mpill{padding:11px 15px;border-radius:10px;background:var(--light);border:1.5px solid transparent;cursor:pointer;transition:all .15s;display:flex;align-items:center;gap:9px;}
+.mpill:hover{border-color:var(--pink);background:#fef0f3;}
+.mpill.done{border-color:#a8e6c0;background:#f0fef4;}
+.mpill-icon{font-size:15px;flex-shrink:0;}
+.mpill-num{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--mid);}
+.mpill-name{font-size:11px;font-weight:600;color:var(--dark);}
+.mpill-check{margin-left:auto;font-size:12px;color:var(--success);}
+/* TOPBAR */
+.main-topbar{position:sticky;top:0;z-index:50;background:rgba(247,245,243,.96);backdrop-filter:blur(8px);padding:13px 44px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;}
+.breadcrumb{font-size:12px;color:var(--mid);}
+.breadcrumb strong{color:var(--dark);font-weight:600;}
+.btn-outline{padding:7px 14px;border:1.5px solid var(--border);border-radius:8px;background:var(--white);font-family:'DM Sans',sans-serif;font-size:12px;font-weight:500;cursor:pointer;color:var(--dark);transition:all .15s;}
+.btn-outline:hover{border-color:var(--pink);color:var(--pink);}
+/* LESSON */
+.lesson-content{flex:1;padding:38px 44px;max-width:780px;}
+.lesson-hero{margin-bottom:28px;}
+.lesson-tag{display:inline-block;background:#fef0f3;color:var(--pink);font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;padding:3px 8px;border-radius:5px;margin-bottom:10px;}
+.lesson-title{font-family:'DM Serif Display',serif;font-size:30px;color:var(--dark);line-height:1.15;margin-bottom:8px;}
+.lesson-meta{font-size:11px;color:var(--mid);display:flex;gap:14px;flex-wrap:wrap;align-items:center;}
+/* STEP NAV */
+.step-nav{display:flex;align-items:center;gap:5px;margin-bottom:22px;}
+.step-dot{width:7px;height:7px;border-radius:50%;background:var(--border);cursor:pointer;transition:all .2s;flex-shrink:0;}
+.step-dot.active{background:var(--pink);width:20px;border-radius:4px;}
+.step-dot.done{background:var(--success);}
+.step-content{display:none;}
+.step-content.active{display:block;}
+.step-nav-btns{display:flex;gap:8px;margin-top:22px;}
+.btn-step{padding:9px 18px;border-radius:9px;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;cursor:pointer;transition:all .15s;border:none;}
+.btn-step-prev{background:var(--white);border:1.5px solid var(--border) !important;color:var(--dark);}
+.btn-step-next{background:var(--grad);color:white;box-shadow:0 3px 12px rgba(232,24,90,.22);}
+.btn-step-next:hover{transform:translateY(-1px);}
+/* LESSON BODY */
+.lesson-body{font-size:14px;line-height:1.78;color:#2a2a2a;}
+.lesson-body h3{font-family:'DM Serif Display',serif;font-size:19px;color:var(--dark);margin:24px 0 8px;}
+.lesson-body h4{font-size:13px;font-weight:700;color:var(--dark);margin:17px 0 6px;}
+.lesson-body p{margin-bottom:12px;}
+.lesson-body ul,.lesson-body ol{margin:0 0 12px 0;padding-left:18px;}
+.lesson-body li{margin-bottom:5px;}
+/* CALLOUT BOXES */
+.tip-box{background:#fffbf0;border-left:3px solid var(--warning);border-radius:0 11px 11px 0;padding:12px 16px;margin:15px 0;}
+.tip-box strong{color:#d68910;font-size:10px;text-transform:uppercase;letter-spacing:.04em;display:block;margin-bottom:4px;}
+.story-box{background:#f0f7ff;border-left:3px solid var(--info);border-radius:0 11px 11px 0;padding:12px 16px;margin:15px 0;font-style:italic;color:#2c3e50;}
+.story-box strong{color:#2471a3;font-size:10px;text-transform:uppercase;letter-spacing:.04em;display:block;margin-bottom:4px;font-style:normal;}
+.video-placeholder{margin-top:10px;background:rgba(52,152,219,.07);border:1.5px dashed #3498db;border-radius:9px;padding:16px;text-align:center;font-style:normal;cursor:pointer;}
+.video-placeholder .play-icon{font-size:24px;margin-bottom:4px;}
+.video-placeholder p{font-size:12px;color:#2471a3;margin:0;}
+.action-box{background:#f0fef4;border:1.5px solid #a8e6c0;border-radius:11px;padding:12px 16px;margin:15px 0;}
+.action-box strong{color:var(--success);font-size:10px;text-transform:uppercase;letter-spacing:.04em;display:block;margin-bottom:4px;}
+.key-point-box{background:linear-gradient(135deg,#fef0f3,#fff5f8);border-radius:11px;padding:14px 16px;margin:15px 0;border:1px solid #fad4df;}
+.key-point-box strong{color:var(--pink);font-size:10px;text-transform:uppercase;letter-spacing:.04em;display:block;margin-bottom:4px;}
+.example-box{background:var(--white);border-radius:11px;padding:14px 16px;margin:13px 0;box-shadow:var(--shadow);border-left:3px solid var(--coral);}
+.example-box strong{color:var(--coral);font-size:10px;text-transform:uppercase;letter-spacing:.04em;display:block;margin-bottom:6px;}
+.example-box p{margin-bottom:5px;font-size:13px;}
+/* FRAMEWORK TABLE */
+.framework-table{width:100%;border-collapse:collapse;margin:13px 0;font-size:12px;}
+.framework-table th{background:var(--dark);color:white;padding:8px 12px;text-align:left;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;}
+.framework-table th:first-child{border-radius:7px 0 0 0;}
+.framework-table th:last-child{border-radius:0 7px 0 0;}
+.framework-table td{padding:8px 12px;border-bottom:1px solid var(--border);vertical-align:top;line-height:1.5;}
+.framework-table tr:hover td{background:#fafafa;}
+.letter-cell{font-family:'DM Serif Display',serif;font-size:17px;color:var(--pink);font-weight:700;width:34px;}
+/* EXERCISES */
+.exercise-block{background:var(--white);border-radius:15px;padding:20px;margin:16px 0;box-shadow:var(--shadow);}
+.exercise-block h4{font-family:'DM Serif Display',serif;font-size:17px;margin-bottom:3px;color:var(--dark);}
+.exercise-block>.sub{font-size:12px;color:var(--mid);margin-bottom:13px;line-height:1.5;}
+.exercise-field{margin-bottom:11px;}
+.exercise-field label{display:block;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--mid);margin-bottom:4px;}
+.ex-input{width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:8px;font-family:'DM Sans',sans-serif;font-size:13px;color:var(--dark);outline:none;transition:border-color .2s;resize:vertical;background:var(--light);}
+.ex-input:focus{border-color:var(--pink);background:var(--white);}
+.ex-table-wrap{overflow-x:auto;}
+.ex-table{width:100%;border-collapse:collapse;font-size:12px;}
+.ex-table th{background:var(--light);padding:7px 10px;text-align:left;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.03em;color:var(--mid);border-bottom:2px solid var(--border);}
+.ex-table td{padding:0;border-bottom:1px solid var(--border);}
+.ex-table td input,.ex-table td textarea{width:100%;padding:7px 10px;border:none;background:transparent;font-family:'DM Sans',sans-serif;font-size:12px;color:var(--dark);outline:none;resize:none;}
+.ex-table td textarea{min-height:40px;}
+.ex-db-note{font-size:10px;color:#bbb;text-align:right;margin-top:4px;font-style:italic;}
+/* QUIZ */
+.quiz-section{background:var(--white);border-radius:18px;padding:26px;margin:26px 0;box-shadow:var(--shadow);}
+.quiz-section h3{font-family:'DM Serif Display',serif;font-size:20px;margin-bottom:3px;}
+.quiz-section>.sub{font-size:12px;color:var(--mid);margin-bottom:20px;}
+.quiz-q{margin-bottom:20px;}
+.quiz-q p{font-size:13px;font-weight:600;margin-bottom:9px;color:var(--dark);line-height:1.4;}
+.quiz-opts{display:flex;flex-direction:column;gap:7px;}
+.quiz-opt{padding:9px 13px;border:1.5px solid var(--border);border-radius:8px;cursor:pointer;font-size:12px;font-family:'DM Sans',sans-serif;text-align:left;background:var(--white);color:var(--dark);transition:all .15s;}
+.quiz-opt:hover:not(:disabled){border-color:var(--pink);background:#fef0f3;}
+.quiz-opt.sel{border-color:var(--pink);background:#fef0f3;color:var(--pink);}
+.quiz-opt.correct{border-color:var(--success);background:#f0fef4;color:var(--success);}
+.quiz-opt.wrong{border-color:#e74c3c;background:#fef0f0;color:#c0392b;}
+.quiz-fb{margin-top:6px;font-size:12px;display:none;}
+.quiz-fb.show{display:block;}
+.quiz-fb.ok{color:var(--success);}
+.quiz-fb.bad{color:#e74c3c;}
+.quiz-submit-btn{margin-top:17px;padding:10px 22px;background:var(--grad);color:white;border:none;border-radius:9px;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;cursor:pointer;}
+.quiz-result{margin-top:16px;padding:14px;border-radius:11px;text-align:center;display:none;}
+.quiz-result.show{display:block;}
+.quiz-result.pass{background:#f0fef4;color:var(--success);}
+.quiz-result.fail{background:#fef0f0;color:#e74c3c;}
+.quiz-result strong{font-size:14px;display:block;margin-bottom:3px;}
+/* NOTES */
+.notes-panel{background:var(--white);border-radius:18px;padding:20px;margin-top:26px;box-shadow:var(--shadow);}
+.notes-panel h4{font-family:'DM Serif Display',serif;font-size:17px;margin-bottom:3px;}
+.notes-panel>.sub{font-size:12px;color:var(--mid);margin-bottom:9px;}
+.notes-ta{width:100%;min-height:85px;border:1.5px solid var(--border);border-radius:9px;padding:10px 12px;font-family:'DM Sans',sans-serif;font-size:13px;line-height:1.65;resize:vertical;outline:none;color:var(--dark);background:var(--light);transition:border-color .2s;}
+.notes-ta:focus{border-color:var(--pink);background:var(--white);}
+.notes-foot{display:flex;align-items:center;justify-content:space-between;margin-top:6px;}
+.notes-saved{font-size:11px;color:var(--success);opacity:0;transition:opacity .3s;}
+.notes-saved.show{opacity:1;}
+.btn-save-note{padding:7px 15px;background:var(--grad);color:white;border:none;border-radius:7px;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:600;cursor:pointer;}
+/* LESSON NAV */
+.lesson-nav{display:flex;align-items:center;justify-content:space-between;margin-top:34px;padding-top:22px;border-top:1px solid var(--border);}
+.btn-nav{padding:10px 19px;border-radius:9px;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;cursor:pointer;transition:all .15s;}
+.btn-prev{background:var(--white);border:1.5px solid var(--border);color:var(--dark);}
+.btn-prev:hover{border-color:var(--dark);}
+.btn-next{background:var(--grad);border:none;color:white;box-shadow:0 3px 13px rgba(232,24,90,.22);}
+.btn-next:hover{transform:translateY(-1px);}
+.mark-btn{padding:10px 19px;background:#f0fef4;border:1.5px solid #a8e6c0;border-radius:9px;color:var(--success);font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;cursor:pointer;transition:all .15s;}
+.mark-btn:hover{background:var(--success);color:white;border-color:var(--success);}
+.mark-btn.done{background:var(--success);color:white;border-color:var(--success);cursor:default;}
+/* XP BADGE */
+.xp-badge{display:inline-flex;align-items:center;gap:4px;background:linear-gradient(135deg,#f39c12,#e67e22);color:white;font-size:10px;font-weight:700;padding:3px 8px;border-radius:18px;}
+/* ACHIEVEMENT */
+.ach-popup{position:fixed;bottom:72px;right:22px;background:var(--white);border-radius:15px;padding:13px 17px;box-shadow:0 8px 32px rgba(0,0,0,.14);display:flex;align-items:center;gap:11px;transform:translateY(130px);transition:transform .4s cubic-bezier(.34,1.56,.64,1);z-index:9998;max-width:270px;border-top:3px solid var(--pink);}
+.ach-popup.show{transform:translateY(0);}
+.ach-icon{font-size:25px;flex-shrink:0;}
+.ach-title{font-size:12px;font-weight:700;color:var(--dark);}
+.ach-sub{font-size:11px;color:var(--mid);}
+/* COMMUNITY */
+.community-wrap{padding:38px 44px;max-width:780px;}
+.community-post{background:var(--white);border-radius:15px;padding:19px;margin-bottom:11px;box-shadow:var(--shadow);}
+.post-author{display:flex;align-items:center;gap:8px;margin-bottom:8px;}
+.post-avatar{width:30px;height:30px;border-radius:50%;background:var(--grad);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:white;flex-shrink:0;}
+.post-avatar.purple{background:linear-gradient(135deg,#9b59b6,#8e44ad);}
+.post-avatar.teal{background:linear-gradient(135deg,#1abc9c,#16a085);}
+.post-avatar.orange{background:linear-gradient(135deg,#f39c12,#e67e22);}
+.post-name{font-size:12px;font-weight:600;color:var(--dark);}
+.post-time{font-size:10px;color:var(--mid);}
+.post-body{font-size:13px;line-height:1.65;color:#333;margin-bottom:10px;}
+.post-actions{display:flex;gap:12px;}
+.post-btn{background:none;border:none;font-size:11px;color:var(--mid);cursor:pointer;padding:0;font-family:'DM Sans',sans-serif;transition:color .15s;}
+.post-btn:hover{color:var(--pink);}
+.new-post-box{background:var(--white);border-radius:15px;padding:15px;margin-bottom:16px;box-shadow:var(--shadow);}
+.new-post-box textarea{width:100%;border:1.5px solid var(--border);border-radius:9px;padding:9px 12px;font-family:'DM Sans',sans-serif;font-size:13px;resize:vertical;min-height:65px;outline:none;transition:border-color .2s;color:var(--dark);}
+.new-post-box textarea:focus{border-color:var(--pink);}
+.new-post-foot{display:flex;justify-content:flex-end;margin-top:6px;}
+.btn-post{padding:7px 15px;background:var(--grad);color:white;border:none;border-radius:7px;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:600;cursor:pointer;}
+/* CERTIFICATE */
+.certificate-wrap{padding:38px 44px;max-width:780px;}
+.cert-card{background:var(--white);border-radius:22px;padding:50px;box-shadow:var(--shadow-lg);text-align:center;border:2px solid var(--border);position:relative;overflow:hidden;}
+.cert-card::before{content:'';position:absolute;top:0;left:0;right:0;height:5px;background:var(--grad);}
+.cert-eyebrow{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--pink);margin-bottom:6px;}
+.cert-heading{font-family:'DM Serif Display',serif;font-size:32px;color:var(--dark);margin-bottom:6px;line-height:1.1;}
+.cert-sub{font-size:13px;color:var(--mid);margin-bottom:22px;}
+.cert-name{font-family:'DM Serif Display',serif;font-size:28px;font-style:italic;color:var(--pink);margin:13px 0;}
+.cert-course{font-size:15px;font-weight:600;color:var(--dark);margin-bottom:5px;}
+.cert-date{font-size:12px;color:var(--mid);margin-bottom:26px;}
+.cert-locked{background:var(--light);border-radius:15px;padding:34px;text-align:center;}
+.cert-locked h3{font-family:'DM Serif Display',serif;font-size:20px;margin:11px 0 7px;}
+.cert-locked p{font-size:13px;color:var(--mid);line-height:1.6;}
+/* TOAST */
+.toast{position:fixed;bottom:22px;right:22px;background:var(--dark);color:white;padding:11px 17px;border-radius:11px;font-size:13px;font-weight:500;box-shadow:0 8px 24px rgba(0,0,0,.2);transform:translateY(80px);transition:transform .3s ease;z-index:9999;max-width:280px;}
+.toast.show{transform:translateY(0);}
+@media(max-width:1100px){.stats-row{grid-template-columns:repeat(2,1fr);}.mods-list{grid-template-columns:1fr;}}
+</style>
+</head>
+<body>
+
+<!-- ===== AUTH ===== -->
+<div id="auth-screen">
+  <div class="auth-wrap">
+    <div class="auth-logo"><svg class="logo-svg" viewBox="0 0 44 44" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="4" y="4" width="18" height="10" rx="5" fill="url(#g1)"/><rect x="4" y="16" width="18" height="10" rx="5" fill="url(#g2)"/><rect x="22" y="16" width="18" height="10" rx="5" fill="url(#g2)"/><rect x="22" y="28" width="18" height="10" rx="5" fill="url(#g3)"/><defs><linearGradient id="g1" x1="4" y1="4" x2="22" y2="14" gradientUnits="userSpaceOnUse"><stop stop-color="#e8185a"/><stop offset="1" stop-color="#d41550"/></linearGradient><linearGradient id="g2" x1="4" y1="16" x2="40" y2="26" gradientUnits="userSpaceOnUse"><stop stop-color="#d41550"/><stop offset="1" stop-color="#ef3a20"/></linearGradient><linearGradient id="g3" x1="22" y1="28" x2="40" y2="38" gradientUnits="userSpaceOnUse"><stop stop-color="#ef3a20"/><stop offset="1" stop-color="#f04b2e"/></linearGradient></defs></svg><span>The Success<br>Toolkits</span></div>
+    <div class="auth-card">
+      <h1>Welcome to the Academy</h1>
+      <p>Sign in to continue your startup journey.</p>
+      <div class="auth-tabs">
+        <button class="auth-tab active" id="tab-login">Sign In</button>
+        <button class="auth-tab" id="tab-register">Create Account</button>
+      </div>
+      <div id="login-form">
+        <div class="form-group"><label>Email</label><input type="email" id="login-email" placeholder="you@example.com" value="rhianne@typeondatasolutions.co.uk"></div>
+        <div class="form-group"><label>Password</label><input type="password" id="login-password" placeholder="&#x2022;&#x2022;&#x2022;&#x2022;&#x2022;&#x2022;&#x2022;&#x2022;" value="password"></div>
+        <button class="btn-primary" id="btn-login">Sign In &#x2192;</button>
+        <p class="auth-note">Demo: any email + any password will work</p>
+      </div>
+      <div id="register-form" style="display:none">
+        <div class="form-group"><label>Full Name</label><input type="text" id="reg-name" placeholder="Your name"></div>
+        <div class="form-group"><label>Email</label><input type="email" id="reg-email" placeholder="you@example.com"></div>
+        <div class="form-group"><label>Password</label><input type="password" id="reg-password" placeholder="Create a password"></div>
+        <button class="btn-primary" id="btn-register">Create Account &amp; Start Learning &#x2192;</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== APP ===== -->
+<div id="app">
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="sidebar-header">
+      <div class="sidebar-logo"><svg class="logo-svg" viewBox="0 0 44 44" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="4" y="4" width="18" height="10" rx="5" fill="url(#g1)"/><rect x="4" y="16" width="18" height="10" rx="5" fill="url(#g2)"/><rect x="22" y="16" width="18" height="10" rx="5" fill="url(#g2)"/><rect x="22" y="28" width="18" height="10" rx="5" fill="url(#g3)"/><defs><linearGradient id="g1" x1="4" y1="4" x2="22" y2="14" gradientUnits="userSpaceOnUse"><stop stop-color="#e8185a"/><stop offset="1" stop-color="#d41550"/></linearGradient><linearGradient id="g2" x1="4" y1="16" x2="40" y2="26" gradientUnits="userSpaceOnUse"><stop stop-color="#d41550"/><stop offset="1" stop-color="#ef3a20"/></linearGradient><linearGradient id="g3" x1="22" y1="28" x2="40" y2="38" gradientUnits="userSpaceOnUse"><stop stop-color="#ef3a20"/><stop offset="1" stop-color="#f04b2e"/></linearGradient></defs></svg><span>The Success<br>Toolkits Academy</span></div>
+    </div>
+    <div class="sidebar-progress">
+      <div class="progress-label"><span>Course Progress</span><span id="progress-pct">0%</span></div>
+      <div class="progress-bar"><div class="progress-fill" id="progress-fill" style="width:0%"></div></div>
+    </div>
+    <nav class="sidebar-nav" id="sidebar-nav"></nav>
+    <div class="sidebar-user">
+      <div class="user-avatar" id="user-avatar">RW</div>
+      <div><div class="user-name" id="user-name-display">Learner</div><div class="user-role">Startup Process</div></div>
+      <button class="logout-btn" id="btn-logout" title="Sign out">&#x238B;</button>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <main class="main">
+    <div class="nav-tabs">
+      <button class="nav-tab active" data-view="dashboard">Academy</button>
+      <button class="nav-tab" data-view="community">Community</button>
+      <button class="nav-tab" data-view="certificate">Certificate</button>
+    </div>
+
+    <!-- DASHBOARD -->
+    <div id="dashboard-view">
+      <div class="dashboard-wrap">
+        <div class="dashboard-hero">
+          <div class="hero-tag">The Success Toolkits Academy</div>
+          <h2>Your Learning Journey</h2>
+          <p>Practical, structured courses built around the challenges real entrepreneurs face. No jargon. No fluff. Just the tools you need.</p>
+          <button class="btn-start" id="btn-continue">Continue Learning &#x2192;</button>
+        </div>
+        <div class="stats-row">
+          <div class="stat-card"><div class="stat-icon">&#x1F4DA;</div><div class="stat-value" id="stat-lessons">0</div><div class="stat-label">Lessons Complete</div></div>
+          <div class="stat-card"><div class="stat-icon">&#x1F3C6;</div><div class="stat-value" id="stat-quizzes">0</div><div class="stat-label">Quizzes Passed</div></div>
+          <div class="stat-card"><div class="stat-icon">&#x2B50;</div><div class="stat-value" id="stat-xp">0</div><div class="stat-label">XP Earned</div></div>
+          <div class="stat-card"><div class="stat-icon">&#x1F3AF;</div><div class="stat-value" id="stat-modules">0</div><div class="stat-label">Modules Done</div></div>
+        </div>
+        <div class="section-heading">Your Courses</div>
+        <div class="section-sub">The Success Toolkits Academy grows with you. More courses will be added as your business develops.</div>
+        <div class="courses-grid" id="courses-grid"></div>
+        <div class="mod-breakdown" id="mod-breakdown">
+          <div class="mod-breakdown-head">
+            <h3>The Startup Process &#x2014; Module Overview</h3>
+            <span style="font-size:12px;color:var(--mid)" id="breakdown-label"></span>
+          </div>
+          <div class="mods-list" id="mods-list"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- LESSON VIEW -->
+    <div id="lesson-view" style="display:none">
+      <div class="main-topbar">
+        <div class="breadcrumb" id="lesson-bc"></div>
+        <button class="btn-outline" id="btn-back">&#x2190; Academy</button>
+      </div>
+      <div class="lesson-content">
+        <div class="lesson-hero">
+          <div class="lesson-tag" id="l-tag"></div>
+          <h1 class="lesson-title" id="l-title"></h1>
+          <div class="lesson-meta"><span>&#x1F4D6; <span id="l-time"></span></span><span id="l-xp"></span></div>
+        </div>
+        <div id="step-nav-wrap" style="display:none"><div class="step-nav" id="step-nav"></div></div>
+        <div id="steps-container"></div>
+        <div id="quiz-container"></div>
+        <div class="notes-panel">
+          <h4>&#x1F4DD; My Notes</h4>
+          <p class="sub">Jot down thoughts, ideas, or actions. Saved locally as you go.</p>
+          <textarea class="notes-ta" id="lesson-notes" placeholder="Start typing your notes here&#x2026;"></textarea>
+          <div class="notes-foot">
+            <span class="notes-saved" id="notes-saved">&#x2713; Saved</span>
+            <button class="btn-save-note" id="btn-save-note">Save Note</button>
+          </div>
+        </div>
+        <div class="lesson-nav">
+          <button class="btn-nav btn-prev" id="btn-prev">&#x2190; Previous</button>
+          <button class="mark-btn" id="mark-btn">&#x2713; Mark as Complete</button>
+          <button class="btn-nav btn-next" id="btn-next">Next &#x2192;</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- COMMUNITY -->
+    <div id="community-view" style="display:none">
+      <div class="community-wrap">
+        <div class="lesson-hero" style="margin-bottom:20px">
+          <div class="lesson-tag">Community</div>
+          <h1 class="lesson-title" style="font-size:28px">Learner Community</h1>
+          <p style="color:var(--mid);font-size:13px">Share wins, ask questions, and support each other through the startup journey.</p>
+        </div>
+        <div class="new-post-box">
+          <textarea id="new-post-text" placeholder="Share something with the community&#x2026;"></textarea>
+          <div class="new-post-foot"><button class="btn-post" id="btn-post">Post</button></div>
+        </div>
+        <div id="community-posts">
+          <div class="community-post"><div class="post-author"><div class="post-avatar purple">SK</div><div><div class="post-name">Sarah K.</div><div class="post-time">2 hours ago</div></div></div><div class="post-body">Just finished the Business &amp; Operations module &#x2014; the PESTLE analysis was a game changer. Had no idea how many external factors I&#x2019;d missed. Highly recommend doing it properly!</div><div class="post-actions"><button class="post-btn like-btn">&#x2764;&#xFE0F; 12 Likes</button><button class="post-btn">&#x1F4AC; Reply</button></div></div>
+          <div class="community-post"><div class="post-author"><div class="post-avatar teal">JM</div><div><div class="post-name">Joanna M.</div><div class="post-time">Yesterday</div></div></div><div class="post-body">Did anyone else find the SCAMPER exercise genuinely useful? I applied it to my onboarding process and came up with three ideas I wouldn&#x2019;t have thought of otherwise. &#x1F64C;</div><div class="post-actions"><button class="post-btn like-btn">&#x2764;&#xFE0F; 9 Likes</button><button class="post-btn">&#x1F4AC; Reply</button></div></div>
+          <div class="community-post"><div class="post-author"><div class="post-avatar orange">TL</div><div><div class="post-name">Tanya L.</div><div class="post-time">3 days ago</div></div></div><div class="post-body">WIN &#x1F389; Registered with Companies House yesterday using the framework from Module 02. Took less than an hour. If you&#x2019;re on the fence &#x2014; just do it!</div><div class="post-actions"><button class="post-btn like-btn">&#x2764;&#xFE0F; 34 Likes</button><button class="post-btn">&#x1F4AC; Reply</button></div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- CERTIFICATE -->
+    <div id="certificate-view" style="display:none">
+      <div class="certificate-wrap">
+        <div class="lesson-hero" style="margin-bottom:20px">
+          <div class="lesson-tag">Certificate</div>
+          <h1 class="lesson-title" style="font-size:28px">Your Certificate</h1>
+        </div>
+        <div id="cert-content"></div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- ACHIEVEMENT POPUP -->
+<div class="ach-popup" id="ach-popup">
+  <div class="ach-icon" id="ach-icon">&#x1F3C6;</div>
+  <div><div class="ach-title" id="ach-title">Achievement Unlocked!</div><div class="ach-sub" id="ach-sub"></div></div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script src="content.js"></script>
+<script>
+// Content loaded from content.js
+
+
+// ═══════════════════════════════════════════════════
+// PERSISTENCE (localStorage — // DB: hooks for backend)
+// ═══════════════════════════════════════════════════
+function loadState() {
+  try {
+    const s = JSON.parse(localStorage.getItem('tst_v3') || '{}');
+    return { completed: new Set(s.completed||[]), quizzesPassed: new Set(s.quizzesPassed||[]),
+      notes: s.notes||{}, exercises: s.exercises||{}, xp: s.xp||0 };
+  } catch(e) { return { completed:new Set(), quizzesPassed:new Set(), notes:{}, exercises:{}, xp:0 }; }
+}
+function saveState() {
+  try {
+    // DB: sync state.completed, state.quizzesPassed, state.notes, state.exercises, state.xp for user
+    localStorage.setItem('tst_v3', JSON.stringify({
+      completed:[...state.completed], quizzesPassed:[...state.quizzesPassed],
+      notes:state.notes, exercises:state.exercises, xp:state.xp }));
+  } catch(e) {}
+}
+
+const _ls = loadState();
+const state = {
+  user: null,          // DB: user profile
+  completed: _ls.completed,
+  quizzesPassed: _ls.quizzesPassed,
+  notes: _ls.notes,
+  exercises: _ls.exercises,
+  xp: _ls.xp,
+  mi: 0, li: 0, step: 0,
+  answers: {}
+};
+
+// ═══════════════════════════════════════════════════
+// HELPERS
+// ═══════════════════════════════════════════════════
+function flatLessons() {
+  const r=[];
+  MODULES.forEach((m,mi) => m.lessons.forEach((l,li) => r.push({...l,mi,li})));
+  return r;
+}
+function modDone(mi) { return MODULES[mi].lessons.every(l => state.completed.has(l.id)); }
+function totalModsDone() { return MODULES.filter((_,i) => modDone(i)).length; }
+
+// ═══════════════════════════════════════════════════
+// AUTH
+// ═══════════════════════════════════════════════════
+function loginUser(name, email) {
+  state.user = {name, email}; // DB: authenticate, load profile
+  const init = name.split(' ').map(n=>n[0]).join('').toUpperCase().slice(0,2);
+  document.getElementById('user-avatar').textContent = init;
+  document.getElementById('user-name-display').textContent = name;
+  document.getElementById('auth-screen').style.display = 'none';
+  document.getElementById('app').style.display = 'block';
+  buildSidebar();
+  showView('dashboard');
+  showToast('Welcome back, ' + name.split(' ')[0] + '! 👋');
+}
+
+// ═══════════════════════════════════════════════════
+// SIDEBAR
+// ═══════════════════════════════════════════════════
+function buildSidebar() {
+  const nav = document.getElementById('sidebar-nav');
+  nav.innerHTML = MODULES.map((mod,mi) => `
+    <div class="module-header" data-mi="${mi}">
+      <div class="module-header-inner">
+        <div class="mod-num ${modDone(mi)?'done':''}" id="mnum-${mi}">${mod.num}</div>
+        <div class="mod-name">${mod.icon} ${mod.title}</div>
+      </div>
+      <span class="mod-toggle ${mi===0?'open':''}" id="mtog-${mi}">&#x25BE;</span>
+    </div>
+    <div class="lesson-list ${mi===0?'open':''}" id="ll-${mi}">
+      ${mod.lessons.map((l,li)=>`
+        <div class="lesson-item" id="li-${mi}-${li}" data-mi="${mi}" data-li="${li}">
+          <div class="lesson-check ${state.completed.has(l.id)?'done':''}"></div>
+          <div class="lesson-name">${l.title}</div>
+        </div>`).join('')}
+    </div>`).join('');
+  nav.querySelectorAll('.module-header').forEach(el => {
+    el.addEventListener('click', () => {
+      const mi = +el.dataset.mi;
+      document.getElementById('ll-'+mi).classList.toggle('open');
+      document.getElementById('mtog-'+mi).classList.toggle('open');
+    });
+  });
+  nav.querySelectorAll('.lesson-item').forEach(el => {
+    el.addEventListener('click', () => openLesson(+el.dataset.mi, +el.dataset.li));
+  });
+  updateProgress();
+}
+
+function updateProgress() {
+  const total = flatLessons().length, done = state.completed.size;
+  const pct = total > 0 ? Math.round((done/total)*100) : 0;
+  document.getElementById('progress-pct').textContent = pct+'%';
+  document.getElementById('progress-fill').style.width = pct+'%';
+  document.getElementById('stat-lessons').textContent = done;
+  document.getElementById('stat-quizzes').textContent = state.quizzesPassed.size;
+  document.getElementById('stat-xp').textContent = state.xp;
+  document.getElementById('stat-modules').textContent = totalModsDone();
+}
+
+// ═══════════════════════════════════════════════════
+// VIEWS
+// ═══════════════════════════════════════════════════
+function showView(view) {
+  ['dashboard','lesson','community','certificate'].forEach(v =>
+    document.getElementById(v+'-view').style.display = v===view ? 'block' : 'none');
+  document.querySelectorAll('.nav-tab').forEach(t => t.classList.toggle('active', t.dataset.view===view));
+  if (view==='dashboard') { buildDashboard(); updateProgress(); }
+  if (view==='certificate') renderCertificate();
+}
+
+function buildDashboard() {
+  // Course cards
+  const grid = document.getElementById('courses-grid');
+  grid.innerHTML = COURSE_CATALOGUE.map(c => {
+    const total = flatLessons().length, done = state.completed.size;
+    const pct = c.active ? Math.round((done/total)*100) : 0;
+    if (c.locked) return `<div class="course-card locked">
+      <div class="course-banner grey"></div>
+      <div class="course-body">
+        <div class="course-header"><div class="course-icon grey">${c.icon}</div><div><h3>${c.title}</h3><div class="course-meta">${c.subtitle}</div></div></div>
+        <p class="course-desc">${c.desc}</p>
+        <div class="course-foot"><div class="locked-badge">🔒 Coming Soon</div></div>
+      </div></div>`;
+    return `<div class="course-card" data-cid="${c.id}">
+      <div class="course-banner"></div>
+      <div class="course-body">
+        <div class="course-header"><div class="course-icon">${c.icon}</div><div><h3>${c.title}</h3><div class="course-meta">${c.subtitle}</div></div></div>
+        <p class="course-desc">${c.desc}</p>
+        <div class="course-foot"><div class="cpbar"><div class="fill" style="width:${pct}%"></div></div><div class="cplabel">${pct}% complete</div></div>
+      </div></div>`;
+  }).join('');
+  grid.querySelectorAll('.course-card:not(.locked)').forEach(el =>
+    el.addEventListener('click', startCourse));
+
+  // Module breakdown
+  const done = totalModsDone();
+  document.getElementById('breakdown-label').textContent = done+' of '+MODULES.length+' modules complete';
+  const list = document.getElementById('mods-list');
+  list.innerHTML = MODULES.map((mod,mi) => {
+    const d = modDone(mi);
+    return `<div class="mpill${d?' done':''}" data-mi="${mi}">
+      <span class="mpill-icon">${mod.icon}</span>
+      <div><div class="mpill-num">Module ${mod.num}</div><div class="mpill-name">${mod.title}</div></div>
+      ${d?'<div class="mpill-check">✓</div>':''}
+    </div>`;
+  }).join('');
+  list.querySelectorAll('.mpill').forEach(el =>
+    el.addEventListener('click', () => openLesson(+el.dataset.mi, 0)));
+}
+
+function startCourse() {
+  const lessons = flatLessons();
+  const next = lessons.find(l => !state.completed.has(l.id)) || lessons[0];
+  openLesson(next.mi, next.li);
+}
+
+// ═══════════════════════════════════════════════════
+// LESSON
+// ═══════════════════════════════════════════════════
+function openLesson(mi, li) {
+  state.mi=mi; state.li=li; state.step=0; state.answers={};
+  const mod = MODULES[mi], lesson = mod.lessons[li];
+  document.getElementById('l-tag').textContent = 'Module '+mod.num+' · '+mod.title;
+  document.getElementById('l-title').textContent = lesson.title;
+  document.getElementById('l-time').textContent = lesson.time+' read';
+  document.getElementById('l-xp').innerHTML = '<span class="xp-badge">+'+lesson.xp+' XP</span>';
+  document.getElementById('lesson-bc').innerHTML = '<strong>Module '+mod.num+'</strong> / '+lesson.title;
+  renderSteps(lesson);
+  renderQuiz(lesson);
+  const btn = document.getElementById('mark-btn');
+  const done = state.completed.has(lesson.id);
+  btn.textContent = done ? '✓ Completed' : '✓ Mark as Complete';
+  btn.className = 'mark-btn'+(done?' done':'');
+  const flat = flatLessons(), idx = flat.findIndex(l=>l.id===lesson.id);
+  document.getElementById('btn-prev').style.visibility = idx>0 ? 'visible' : 'hidden';
+  document.getElementById('btn-next').style.visibility = idx<flat.length-1 ? 'visible' : 'hidden';
+  document.querySelectorAll('.lesson-item').forEach(el=>el.classList.remove('active'));
+  const item = document.getElementById('li-'+mi+'-'+li);
+  if (item) { item.classList.add('active'); document.getElementById('ll-'+mi).classList.add('open'); document.getElementById('mtog-'+mi).classList.add('open'); }
+  document.getElementById('lesson-notes').value = state.notes[lesson.id]||'';
+  document.getElementById('notes-saved').classList.remove('show');
+  showView('lesson');
+  window.scrollTo(0,0);
+}
+
+function renderSteps(lesson) {
+  const steps = lesson.steps||[], container = document.getElementById('steps-container');
+  const navWrap = document.getElementById('step-nav-wrap'), navEl = document.getElementById('step-nav');
+  container.innerHTML = ''; navEl.innerHTML = '';
+  if (steps.length <= 1) {
+    navWrap.style.display='none';
+    const div=document.createElement('div'); div.className='step-content active';
+    div.innerHTML = (steps[0]?steps[0].html:'') + buildExercise(lesson.id, steps[0]);
+    container.appendChild(div);
+    loadExVals(lesson.id);
+    return;
+  }
+  navWrap.style.display='block';
+  steps.forEach((step,si) => {
+    const dot=document.createElement('div');
+    dot.className='step-dot'+(si===0?' active':'')+(si<state.step?' done':'');
+    dot.dataset.si=si; dot.title=step.title;
+    dot.addEventListener('click', () => goStep(si, lesson));
+    navEl.appendChild(dot);
+    const div=document.createElement('div');
+    div.className='step-content'+(si===0?' active':'');
+    div.id='sc-'+si;
+    let html = step.html + buildExercise(lesson.id+'_s'+si, step);
+    if (si<steps.length-1) {
+      html += `<div class="step-nav-btns">${si>0?`<button class="btn-step btn-step-prev" data-si="${si-1}">&#x2190; Previous</button>`:''}<button class="btn-step btn-step-next" data-si="${si+1}">Next: ${steps[si+1].title} &#x2192;</button></div>`;
+    }
+    div.innerHTML=html;
+    container.appendChild(div);
+  });
+  container.querySelectorAll('.btn-step-next').forEach(b=>b.addEventListener('click',()=>goStep(+b.dataset.si,lesson)));
+  container.querySelectorAll('.btn-step-prev').forEach(b=>b.addEventListener('click',()=>goStep(+b.dataset.si,lesson)));
+  loadExVals(lesson.id);
+}
+
+function goStep(si, lesson) {
+  state.step=si;
+  document.querySelectorAll('.step-content').forEach((el,i)=>el.classList.toggle('active',i===si));
+  document.querySelectorAll('.step-dot').forEach((el,i)=>{
+    el.classList.toggle('active',i===si); el.classList.toggle('done',i<si);
+  });
+  window.scrollTo(0, document.querySelector('.lesson-hero').offsetTop-20);
+}
+
+function buildExercise(key, step) {
+  if (!step||!step.exercise) return '';
+  const ex=step.exercise;
+  let html=`<div class="exercise-block"><h4>📋 ${ex.title}</h4><p class="sub">${ex.sub}</p>`;
+  if (ex.fields) ex.fields.forEach((f,fi)=>{
+    const fk=key+'_f'+fi;
+    html+=`<div class="exercise-field"><label>${f.label}</label>`;
+    if (f.type==='textarea') html+=`<textarea class="ex-input" rows="3" placeholder="${f.ph}" data-key="${fk}"></textarea>`;
+    else html+=`<input type="text" class="ex-input" placeholder="${f.ph}" data-key="${fk}">`;
+    html+='</div>';
+  });
+  if (ex.tables) ex.tables.forEach((t,ti)=>{
+    const tk=key+'_t'+ti;
+    html+=`<div class="exercise-field"><label>${t.label}</label><div class="ex-table-wrap"><table class="ex-table"><thead><tr>${t.cols.map(c=>`<th>${c}</th>`).join('')}</tr></thead><tbody>`;
+    for(let r=0;r<t.rows;r++) {
+      html+='<tr>'+t.cols.map((c,ci)=>{
+        const ck=tk+'_r'+r+'_c'+ci;
+        const pf=(t.prefill&&ci===0)?(t.prefill[r]||''):'';
+        if(pf) return `<td><input type="text" class="ex-input" value="${pf}" data-key="${ck}" readonly style="color:var(--mid);font-weight:600;font-size:12px;"></td>`;
+        return `<td><textarea class="ex-input" rows="2" data-key="${ck}"></textarea></td>`;
+      }).join('')+'</tr>';
+    }
+    html+='</tbody></table></div></div>';
+  });
+  // DB: exercise answers saved to state.exercises on change, synced on blur
+  html+='<p class="ex-db-note">// DB: answers will sync to your profile</p></div>';
+  return html;
+}
+
+function loadExVals(prefix) {
+  document.querySelectorAll('[data-key]').forEach(el=>{
+    const val=state.exercises[el.dataset.key];
+    if (val!==undefined && !el.readOnly) el.value=val;
+    if (!el.readOnly) {
+      el.addEventListener('input',()=>{ state.exercises[el.dataset.key]=el.value; });
+      el.addEventListener('blur',()=>saveState());
+    }
+  });
+}
+
+// ═══════════════════════════════════════════════════
+// QUIZ
+// ═══════════════════════════════════════════════════
+function renderQuiz(lesson) {
+  const c=document.getElementById('quiz-container');
+  if (!lesson.quiz||!lesson.quiz.length) { c.innerHTML=''; return; }
+  c.innerHTML=`<div class="quiz-section">
+    <h3>📝 Knowledge Check</h3>
+    <p class="sub">Test what you've learned. You can change your answer before submitting.</p>
+    ${lesson.quiz.map((q,qi)=>`
+      <div class="quiz-q">
+        <p>${qi+1}. ${q.q}</p>
+        <div class="quiz-opts">
+          ${q.opts.map((o,oi)=>`<button class="quiz-opt" data-qi="${qi}" data-oi="${oi}">${o}</button>`).join('')}
+        </div>
+        <div class="quiz-fb" id="qfb-${qi}"></div>
+      </div>`).join('')}
+    <button class="quiz-submit-btn" id="quiz-submit">Submit Answers</button>
+    <div class="quiz-result" id="quiz-result"></div>
+  </div>`;
+  c.querySelectorAll('.quiz-opt').forEach(btn=>{
+    btn.addEventListener('click',()=>{
+      if(btn.disabled) return;
+      const qi=+btn.dataset.qi;
+      c.querySelectorAll('[data-qi="'+qi+'"]').forEach(b=>b.classList.remove('sel'));
+      btn.classList.add('sel');
+      state.answers[qi]=+btn.dataset.oi;
+    });
+  });
+  c.querySelector('#quiz-submit').addEventListener('click',()=>submitQuiz(lesson));
+}
+
+function submitQuiz(lesson) {
+  let correct=0;
+  const c=document.getElementById('quiz-container');
+  lesson.quiz.forEach((q,qi)=>{
+    const ans=state.answers[qi];
+    if(ans===undefined) return;
+    const ok=ans===q.correct;
+    if(ok) correct++;
+    c.querySelectorAll('[data-qi="'+qi+'"]').forEach(b=>{
+      b.disabled=true;
+      const oi=+b.dataset.oi;
+      if(oi===q.correct) b.classList.add('correct');
+      else if(oi===ans&&!ok) b.classList.add('wrong');
+    });
+    const fb=document.getElementById('qfb-'+qi);
+    fb.textContent=(ok?'✓ ':'✗ ')+q.fb;
+    fb.className='quiz-fb show '+(ok?'ok':'bad');
+  });
+  const total=lesson.quiz.length, passed=correct>=Math.ceil(total*0.5);
+  const res=document.getElementById('quiz-result');
+  res.className='quiz-result show '+(passed?'pass':'fail');
+  if(passed) {
+    state.quizzesPassed.add(lesson.id); state.completed.add(lesson.id); state.xp+=lesson.xp;
+    saveState(); // DB: save quiz pass + completion + XP
+    res.innerHTML=`<strong>🎉 ${correct}/${total} correct — well done!</strong><p>This lesson is now marked complete.</p>`;
+    refreshCompletionUI(lesson);
+    triggerAchievement('Quiz Passed! +'+lesson.xp+' XP', lesson.title);
+  } else {
+    res.innerHTML=`<strong>${correct}/${total} correct</strong><p>Review the content above and try again.</p>`;
+  }
+  c.querySelector('#quiz-submit').style.display='none';
+  updateProgress();
+}
+
+function refreshCompletionUI(lesson) {
+  const btn=document.getElementById('mark-btn');
+  btn.textContent='✓ Completed'; btn.className='mark-btn done';
+  const item=document.getElementById('li-'+state.mi+'-'+state.li);
+  if(item) item.querySelector('.lesson-check').classList.add('done');
+  if(modDone(state.mi)) document.getElementById('mnum-'+state.mi).classList.add('done');
+}
+
+function markComplete() {
+  const lesson=MODULES[state.mi].lessons[state.li];
+  if(state.completed.has(lesson.id)) return;
+  state.completed.add(lesson.id); state.xp+=lesson.xp;
+  saveState(); // DB: save lesson completion + XP
+  refreshCompletionUI(lesson);
+  updateProgress();
+  triggerAchievement('Lesson Complete! +'+lesson.xp+' XP', lesson.title);
+}
+
+// ═══════════════════════════════════════════════════
+// GAMIFICATION
+// ═══════════════════════════════════════════════════
+function triggerAchievement(title, sub) {
+  const pop=document.getElementById('ach-popup');
+  document.getElementById('ach-title').textContent=title;
+  document.getElementById('ach-sub').textContent=sub;
+  pop.classList.add('show');
+  setTimeout(()=>pop.classList.remove('show'), 3500);
+}
+
+// ═══════════════════════════════════════════════════
+// NAVIGATION
+// ═══════════════════════════════════════════════════
+function navLesson(dir) {
+  const flat=flatLessons(), cur=flat.findIndex(l=>l.mi===state.mi&&l.li===state.li);
+  const nxt=cur+dir;
+  if(nxt>=0&&nxt<flat.length) openLesson(flat[nxt].mi, flat[nxt].li);
+}
+
+// ═══════════════════════════════════════════════════
+// COMMUNITY
+// ═══════════════════════════════════════════════════
+function addPost(text) {
+  const init=state.user?state.user.name.split(' ').map(n=>n[0]).join('').toUpperCase().slice(0,2):'ME';
+  const name=state.user?state.user.name:'You';
+  const p=document.createElement('div'); p.className='community-post';
+  p.innerHTML=`<div class="post-author"><div class="post-avatar">${init}</div><div><div class="post-name">${name}</div><div class="post-time">Just now</div></div></div>
+    <div class="post-body">${text}</div>
+    <div class="post-actions"><button class="post-btn like-btn">❤️ 0 Likes</button><button class="post-btn">💬 Reply</button></div>`;
+  p.querySelector('.like-btn').addEventListener('click',function(){likePost(this);});
+  // DB: save post to community feed
+  document.getElementById('community-posts').prepend(p);
+  showToast('Posted! 💬');
+}
+
+function likePost(btn) {
+  const m=btn.textContent.match(/(\d+)/);
+  if(m){const c=+m[1]+1; btn.textContent='❤️ '+c+' Like'+(c!==1?'s':''); btn.style.color='var(--pink)';}
+  // DB: save like for user
+}
+
+// ═══════════════════════════════════════════════════
+// CERTIFICATE
+// ═══════════════════════════════════════════════════
+function renderCertificate() {
+  const total=flatLessons().length, done=state.completed.size;
+  const name=state.user?state.user.name:'Learner';
+  const c=document.getElementById('cert-content');
+  if(done===total) {
+    const date=new Date().toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'});
+    c.innerHTML=`<div class="cert-card">
+      <div class="cert-eyebrow">Certificate of Completion</div>
+      <div class="cert-heading">The Success Toolkits Academy</div>
+      <div class="cert-sub">This is to certify that</div>
+      <div class="cert-name">${name}</div>
+      <div class="cert-course">The Startup Process</div>
+      <div class="cert-date">Completed ${date} &middot; ${state.xp} XP Earned</div>
+      <button class="btn-primary" id="btn-print" style="width:auto;padding:11px 26px;margin-top:14px">🖨️ Print Certificate</button>
+    </div>`;
+    document.getElementById('btn-print').addEventListener('click',()=>window.print());
+    // DB: generate and store certificate record
+  } else {
+    c.innerHTML=`<div class="cert-locked">
+      <div style="font-size:44px">🔒</div>
+      <h3>Complete the Course to Unlock Your Certificate</h3>
+      <p>You've completed <strong>${done} of ${total}</strong> lessons. Your certificate is waiting.</p>
+      <div style="margin:16px 0;height:7px;background:var(--border);border-radius:3px;overflow:hidden"><div style="height:100%;width:${Math.round((done/total)*100)}%;background:var(--grad);border-radius:3px"></div></div>
+      <p style="margin-bottom:18px;font-size:12px">${Math.round((done/total)*100)}% complete &middot; ${state.xp} XP earned so far</p>
+      <button class="btn-primary" id="btn-cont" style="width:auto;padding:11px 26px">Continue Learning &#x2192;</button>
+    </div>`;
+    document.getElementById('btn-cont').addEventListener('click',startCourse);
+  }
+}
+
+// ═══════════════════════════════════════════════════
+// TOAST
+// ═══════════════════════════════════════════════════
+function showToast(msg) {
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),3000);
+}
+
+// ═══════════════════════════════════════════════════
+// WIRE UP — all events in DOMContentLoaded, no inline onclick
+// ═══════════════════════════════════════════════════
+document.addEventListener('DOMContentLoaded', function() {
+  // Auth tabs
+  document.getElementById('tab-login').addEventListener('click',()=>{
+    document.getElementById('login-form').style.display='block';
+    document.getElementById('register-form').style.display='none';
+    document.getElementById('tab-login').classList.add('active');
+    document.getElementById('tab-register').classList.remove('active');
+  });
+  document.getElementById('tab-register').addEventListener('click',()=>{
+    document.getElementById('register-form').style.display='block';
+    document.getElementById('login-form').style.display='none';
+    document.getElementById('tab-register').classList.add('active');
+    document.getElementById('tab-login').classList.remove('active');
+  });
+  // Login
+  document.getElementById('btn-login').addEventListener('click',()=>{
+    const email=document.getElementById('login-email').value.trim();
+    const pass=document.getElementById('login-password').value;
+    if(!email||!pass) return showToast('Please fill in all fields.');
+    const name=email.split('@')[0].replace(/[._-]/g,' ').replace(/\b\w/g,l=>l.toUpperCase());
+    loginUser(name||'Learner', email);
+  });
+  document.getElementById('login-password').addEventListener('keydown',e=>{
+    if(e.key==='Enter') document.getElementById('btn-login').click();
+  });
+  // Register
+  document.getElementById('btn-register').addEventListener('click',()=>{
+    const name=document.getElementById('reg-name').value.trim();
+    const email=document.getElementById('reg-email').value.trim();
+    const pass=document.getElementById('reg-password').value;
+    if(!name||!email||!pass) return showToast('Please fill in all fields.');
+    loginUser(name, email);
+  });
+  // Logout
+  document.getElementById('btn-logout').addEventListener('click',()=>{
+    state.user=null; // DB: clear session
+    document.getElementById('auth-screen').style.display='flex';
+    document.getElementById('app').style.display='none';
+  });
+  // Nav tabs
+  document.querySelectorAll('.nav-tab').forEach(btn=>btn.addEventListener('click',()=>showView(btn.dataset.view)));
+  // Dashboard
+  document.getElementById('btn-continue').addEventListener('click',startCourse);
+  // Lesson nav
+  document.getElementById('btn-back').addEventListener('click',()=>showView('dashboard'));
+  document.getElementById('btn-prev').addEventListener('click',()=>navLesson(-1));
+  document.getElementById('btn-next').addEventListener('click',()=>navLesson(1));
+  document.getElementById('mark-btn').addEventListener('click',markComplete);
+  // Notes
+  document.getElementById('btn-save-note').addEventListener('click',()=>{
+    const lesson=MODULES[state.mi].lessons[state.li];
+    state.notes[lesson.id]=document.getElementById('lesson-notes').value;
+    saveState(); // DB: save note for user + lesson
+    const s=document.getElementById('notes-saved');
+    s.classList.add('show'); setTimeout(()=>s.classList.remove('show'),2000);
+  });
+  document.addEventListener('keydown',e=>{
+    if((e.ctrlKey||e.metaKey)&&e.key==='s'&&document.getElementById('lesson-view').style.display!=='none'){
+      e.preventDefault(); document.getElementById('btn-save-note').click();
+    }
+  });
+  // Community
+  document.getElementById('btn-post').addEventListener('click',()=>{
+    const t=document.getElementById('new-post-text').value.trim();
+    if(!t) return;
+    addPost(t);
+    document.getElementById('new-post-text').value='';
+  });
+  document.querySelectorAll('.like-btn').forEach(btn=>btn.addEventListener('click',function(){likePost(this);}));
+  // Video placeholders
+  document.addEventListener('click',e=>{
+    if(e.target.closest('.video-placeholder')) showToast('📹 Video content coming soon!');
+  });
+  // Build sidebar with saved progress
+  buildSidebar();
+});
+</script>
+</body>
+</html>
