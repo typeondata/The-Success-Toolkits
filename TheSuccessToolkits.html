@@ -60,6 +60,18 @@ body{font-family:'DM Sans',sans-serif;background:var(--light);color:var(--dark);
 .lesson-check.done::after{content:'\2713';font-size:7px;color:white;font-weight:700;}
 .lesson-name{font-size:11px;color:var(--mid);line-height:1.3;}
 .lesson-item.active .lesson-name{color:var(--dark);font-weight:500;}
+.step-list{display:none;padding:0 0 3px;}
+.step-list.open{display:block;}
+.step-item{padding:4px 22px 4px 62px;display:flex;align-items:center;gap:7px;cursor:pointer;transition:background .15s;position:relative;}
+.step-item:hover{background:var(--light);}
+.step-item.active{background:#fef0f3;}
+.step-item.active::before{content:'';position:absolute;left:0;top:2px;bottom:2px;width:3px;background:var(--grad);border-radius:0 2px 2px 0;}
+.step-dot-check{width:8px;height:8px;border:1.5px solid var(--border);border-radius:50%;flex-shrink:0;transition:all .2s;}
+.step-dot-check.active{border-color:var(--pink);}
+.step-dot-check.visited{background:var(--border);border-color:transparent;}
+.step-dot-check.done{background:var(--grad);border-color:transparent;}
+.step-name{font-size:10px;color:var(--mid);line-height:1.3;}
+.step-item.active .step-name{color:var(--dark);font-weight:500;}
 .sidebar-user{padding:12px 22px;border-top:1px solid var(--border);display:flex;align-items:center;gap:9px;}
 .user-avatar{width:32px;height:32px;border-radius:50%;background:var(--grad);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:white;flex-shrink:0;}
 .user-name{font-size:12px;font-weight:600;color:var(--dark);}
@@ -506,7 +518,8 @@ const state = {
   exercises: {},
   xp: 0,
   mi: 0, li: 0, step: 0,
-  answers: {}
+  answers: {},
+  visitedSteps: new Set()
 };
 
 // ═══════════════════════════════════════════════════
@@ -562,7 +575,21 @@ function buildSidebar() {
         <div class="lesson-item" id="li-${mi}-${li}" data-mi="${mi}" data-li="${li}">
           <div class="lesson-check ${state.completed.has(l.id)?'done':''}"></div>
           <div class="lesson-name">${l.title}</div>
-        </div>`).join('')}
+        </div>
+        ${(l.steps&&l.steps.length>1)?`
+        <div class="step-list" id="sl-${mi}-${li}">
+          ${l.steps.map((s,si)=>{
+            const key=l.id+'_'+si;
+            const done=state.completed.has(l.id);
+            const active=state.mi===mi&&state.li===li&&state.step===si;
+            const visited=state.visitedSteps.has(key);
+            const cls=done?'done':active?'active':visited?'visited':'';
+            return `<div class="step-item" id="si-${mi}-${li}-${si}" data-mi="${mi}" data-li="${li}" data-si="${si}">
+              <div class="step-dot-check ${cls}"></div>
+              <div class="step-name">${s.title}</div>
+            </div>`;
+          }).join('')}
+        </div>`:''}`).join('')}
     </div>`).join('');
   nav.querySelectorAll('.module-header').forEach(el => {
     el.addEventListener('click', () => {
@@ -573,6 +600,14 @@ function buildSidebar() {
   });
   nav.querySelectorAll('.lesson-item').forEach(el => {
     el.addEventListener('click', () => openLesson(+el.dataset.mi, +el.dataset.li));
+  });
+  nav.querySelectorAll('.step-item').forEach(el => {
+    el.addEventListener('click', e => {
+      e.stopPropagation();
+      const mi=+el.dataset.mi, li=+el.dataset.li, si=+el.dataset.si;
+      if(state.mi!==mi||state.li!==li) openLesson(mi,li);
+      goStep(si, MODULES[mi].lessons[li]);
+    });
   });
   updateProgress();
 }
@@ -665,8 +700,13 @@ function openLesson(mi, li) {
   btn.className = 'mark-btn'+(done?' done':'');
   updateNavButtons(lesson);
   document.querySelectorAll('.lesson-item').forEach(el=>el.classList.remove('active'));
+  document.querySelectorAll('.step-list').forEach(el=>el.classList.remove('open'));
   const item = document.getElementById('li-'+mi+'-'+li);
   if (item) { item.classList.add('active'); document.getElementById('ll-'+mi).classList.add('open'); document.getElementById('mtog-'+mi).classList.add('open'); }
+  const stepList = document.getElementById('sl-'+mi+'-'+li);
+  if (stepList) stepList.classList.add('open');
+  state.visitedSteps.add(lesson.id+'_0');
+  updateSidebarSteps(mi, li, lesson);
   document.getElementById('lesson-notes').value = state.notes[lesson.id]||'';
   document.getElementById('notes-saved').classList.remove('show');
   showView('lesson');
@@ -724,12 +764,28 @@ function renderSteps(lesson) {
 
 function goStep(si, lesson) {
   state.step=si;
+  state.visitedSteps.add(lesson.id+'_'+si);
   document.querySelectorAll('.step-content').forEach((el,i)=>el.classList.toggle('active',i===si));
   document.querySelectorAll('.step-dot').forEach((el,i)=>{
     el.classList.toggle('active',i===si); el.classList.toggle('done',i<si);
   });
   updateNavButtons(lesson);
+  updateSidebarSteps(state.mi, state.li, lesson);
   window.scrollTo(0, document.querySelector('.lesson-hero').offsetTop-20);
+}
+
+function updateSidebarSteps(mi, li, lesson) {
+  const steps = lesson.steps||[];
+  steps.forEach((s,si) => {
+    const el = document.getElementById('si-'+mi+'-'+li+'-'+si);
+    if (!el) return;
+    const dot = el.querySelector('.step-dot-check');
+    const isActive = state.step===si;
+    const isDone = state.completed.has(lesson.id);
+    const isVisited = state.visitedSteps.has(lesson.id+'_'+si);
+    el.classList.toggle('active', isActive);
+    dot.className = 'step-dot-check'+(isDone?' done':isActive?' active':isVisited?' visited':'');
+  });
 }
 
 function updateNavButtons(lesson) {
@@ -894,6 +950,7 @@ function markComplete() {
   }
   saveState(); // DB: save lesson completion + XP
   refreshCompletionUI(lesson);
+  updateSidebarSteps(state.mi, state.li, lesson);
   updateProgress();
   triggerAchievement('Lesson Complete! +'+lesson.xp+' XP', lesson.title);
 }
