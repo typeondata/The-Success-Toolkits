@@ -434,7 +434,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--light);color:var(--dark);
 <div class="toast" id="toast"></div>
 
 <script src="content.js"></script>
-<script src="/api-client.js"></script>
+<script src="/server/api-client.js"></script>
 <script>
 // Content loaded from content.js
 
@@ -525,7 +525,6 @@ function totalModsDone() { return MODULES.filter((_,i) => modDone(i)).length; }
 // ═══════════════════════════════════════════════════
 async function loginUser(name, email) {
   state.user = {name, email}; // DB: authenticate, load profile
-  API.setToken('temp-token'); // Will be replaced with real token for registered users
   const init = name.split(' ').map(n=>n[0]).join('').toUpperCase().slice(0,2);
   document.getElementById('user-avatar').textContent = init;
   document.getElementById('user-name-display').textContent = name;
@@ -664,9 +663,7 @@ function openLesson(mi, li) {
   const done = state.completed.has(lesson.id);
   btn.textContent = done ? '✓ Completed' : '✓ Mark as Complete';
   btn.className = 'mark-btn'+(done?' done':'');
-  const flat = flatLessons(), idx = flat.findIndex(l=>l.id===lesson.id);
-  document.getElementById('btn-prev').style.visibility = idx>0 ? 'visible' : 'hidden';
-  document.getElementById('btn-next').style.visibility = idx<flat.length-1 ? 'visible' : 'hidden';
+  updateNavButtons(lesson);
   document.querySelectorAll('.lesson-item').forEach(el=>el.classList.remove('active'));
   const item = document.getElementById('li-'+mi+'-'+li);
   if (item) { item.classList.add('active'); document.getElementById('ll-'+mi).classList.add('open'); document.getElementById('mtog-'+mi).classList.add('open'); }
@@ -674,6 +671,27 @@ function openLesson(mi, li) {
   document.getElementById('notes-saved').classList.remove('show');
   showView('lesson');
   window.scrollTo(0,0);
+
+  // Fetch notes and exercises from API when lesson opens
+  if (isUsingAPI && state.user) {
+    API.getNote(lesson.id).then(result => {
+      if (result && result.content) {
+        state.notes[lesson.id] = result.content;
+        document.getElementById('lesson-notes').value = result.content;
+      }
+    });
+    API.getExercise(lesson.id).then(exData => {
+      if (exData && typeof exData === 'object' && Object.keys(exData).length > 0) {
+        Object.assign(state.exercises, exData);
+        document.querySelectorAll('[data-key]').forEach(el => {
+          if (el.dataset.key.startsWith(lesson.id + '_') && !el.readOnly) {
+            const val = state.exercises[el.dataset.key];
+            if (val !== undefined) el.value = val;
+          }
+        });
+      }
+    });
+  }
 }
 
 function renderSteps(lesson) {
@@ -698,15 +716,9 @@ function renderSteps(lesson) {
     const div=document.createElement('div');
     div.className='step-content'+(si===0?' active':'');
     div.id='sc-'+si;
-    let html = step.html + buildExercise(lesson.id+'_s'+si, step);
-    if (si<steps.length-1) {
-      html += `<div class="step-nav-btns">${si>0?`<button class="btn-step btn-step-prev" data-si="${si-1}">&#x2190; Previous</button>`:''}<button class="btn-step btn-step-next" data-si="${si+1}">Next: ${steps[si+1].title} &#x2192;</button></div>`;
-    }
-    div.innerHTML=html;
+    div.innerHTML = step.html + buildExercise(lesson.id+'_s'+si, step);
     container.appendChild(div);
   });
-  container.querySelectorAll('.btn-step-next').forEach(b=>b.addEventListener('click',()=>goStep(+b.dataset.si,lesson)));
-  container.querySelectorAll('.btn-step-prev').forEach(b=>b.addEventListener('click',()=>goStep(+b.dataset.si,lesson)));
   loadExVals(lesson.id);
 }
 
@@ -716,7 +728,30 @@ function goStep(si, lesson) {
   document.querySelectorAll('.step-dot').forEach((el,i)=>{
     el.classList.toggle('active',i===si); el.classList.toggle('done',i<si);
   });
+  updateNavButtons(lesson);
   window.scrollTo(0, document.querySelector('.lesson-hero').offsetTop-20);
+}
+
+function updateNavButtons(lesson) {
+  const steps = lesson.steps||[];
+  const flat = flatLessons();
+  const lessonIdx = flat.findIndex(l=>l.mi===state.mi&&l.li===state.li);
+  const hasNextStep = state.step < steps.length-1;
+  const hasPrevStep = state.step > 0;
+  const hasNextLesson = lessonIdx < flat.length-1;
+  const hasPrevLesson = lessonIdx > 0;
+
+  const prevBtn = document.getElementById('btn-prev');
+  const nextBtn = document.getElementById('btn-next');
+
+  prevBtn.style.visibility = (hasPrevStep||hasPrevLesson) ? 'visible' : 'hidden';
+  nextBtn.style.visibility = (hasNextStep||hasNextLesson) ? 'visible' : 'hidden';
+
+  if (hasNextStep) {
+    nextBtn.innerHTML = `Next: ${steps[state.step+1].title} &#x2192;`;
+  } else {
+    nextBtn.innerHTML = `Next &#x2192;`;
+  }
 }
 
 function buildExercise(key, step) {
@@ -754,7 +789,16 @@ function loadExVals(prefix) {
     if (val!==undefined && !el.readOnly) el.value=val;
     if (!el.readOnly) {
       el.addEventListener('input',()=>{ state.exercises[el.dataset.key]=el.value; });
-      el.addEventListener('blur',()=>saveState());
+      el.addEventListener('blur',()=>{
+        saveState();
+        if (isUsingAPI && state.user) {
+          const data = {};
+          Object.entries(state.exercises).forEach(([k,v])=>{
+            if (k.startsWith(prefix+'_')) data[k]=v;
+          });
+          API.saveExercise(prefix, data);
+        }
+      });
     }
   });
 }
@@ -869,6 +913,10 @@ function triggerAchievement(title, sub) {
 // NAVIGATION
 // ═══════════════════════════════════════════════════
 function navLesson(dir) {
+  const lesson = MODULES[state.mi].lessons[state.li];
+  const steps = lesson.steps||[];
+  if (dir===1 && state.step < steps.length-1) { goStep(state.step+1, lesson); return; }
+  if (dir===-1 && state.step > 0) { goStep(state.step-1, lesson); return; }
   const flat=flatLessons(), cur=flat.findIndex(l=>l.mi===state.mi&&l.li===state.li);
   const nxt=cur+dir;
   if(nxt>=0&&nxt<flat.length) openLesson(flat[nxt].mi, flat[nxt].li);
