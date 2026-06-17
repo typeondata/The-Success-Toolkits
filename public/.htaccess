@@ -1,0 +1,15 @@
+# The Success Toolkits Academy — static site
+# Ensures this folder serves the Academy directly and is NOT affected by
+# any WordPress rewrite/redirect rules inherited from a parent folder.
+
+# Serve the Academy app as the folder's home page
+DirectoryIndex index.html
+
+# Turn off URL rewriting inherited from a parent .htaccess (e.g. WordPress),
+# which is what was 301-redirecting the subdomain to the main homepage.
+<IfModule mod_rewrite.c>
+  RewriteEngine Off
+</IfModule>
+
+# Don't list folder contents if a file is missing
+Options -Indexes
