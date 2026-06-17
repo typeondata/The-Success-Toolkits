@@ -1,0 +1,21 @@
+# ── Secrets & environment ──────────────────────────────
+.env
+.env.local
+.env.*.local
+*.pem
+*.key
+
+# ── Dependencies ───────────────────────────────────────
+node_modules/
+
+# ── Logs & runtime ─────────────────────────────────────
+*.log
+npm-debug.log*
+.DS_Store
+Thumbs.db
+
+# ── Build / editor ─────────────────────────────────────
+dist/
+.vscode/
+.idea/
+.claude/settings.local.json
