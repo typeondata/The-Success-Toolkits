@@ -8,6 +8,22 @@ runs perfectly on standard 20i shared hosting.
 
 ---
 
+## ✅ Quick deploy checklist
+
+Use this every time you push a change live:
+
+1. **Commit & push** to GitHub so the source is saved (`git add` → `git commit` → `git push`).
+2. Note **which files changed** this release:
+   - Edited a lesson, quiz, or course card → re-upload **`content.js`**.
+   - Edited layout, styling, or app behaviour → re-upload **`index.html`**.
+   - Not sure → upload **both**.
+3. Log in to **my.20i.com** → **Manage Hosting** → **File Manager** (or FTP).
+4. Go to the web root (`public_html/`, or the subdomain folder) and **upload, overwriting** the changed file(s).
+5. **Hard-refresh** the live site (**Ctrl+F5**) to bypass the cache.
+6. Smoke-test: sign in → confirm you land straight on the first lesson → click through one lesson.
+
+---
+
 ## Option A — 20i File Manager (easiest, no extra tools)
 
 1. Log in to **my.20i.com** → **Manage Hosting** → select the package for this site.
@@ -50,3 +66,39 @@ The current site stores each learner's progress in **their own browser** (`local
 That's self-contained and free to host. Real accounts / cross-device sync / community would
 need the `server/` API running on a Node + PostgreSQL host (not 20i shared) — a separate,
 later piece of work.
+
+---
+
+## Automating deploys (optional — skip the manual upload)
+
+Today, pushing to GitHub saves the source but **does not** change the live site — you still
+upload to 20i by hand. If you'd like a `git push` to publish automatically, here are the options,
+easiest first:
+
+### Option 1 — GitHub Pages (free, zero hosting setup)
+GitHub can serve `public/` straight from this repo at a `github.io` URL (or your own domain).
+
+1. On GitHub: **Settings → Pages**.
+2. **Source:** *Deploy from a branch* → branch **`main`**, folder **`/public`** → **Save**.
+3. After a minute the site is live at `https://typeondata.github.io/The-Success-Toolkits/`.
+4. To use `academy.thesuccesstoolkits.com` instead: add it under **Pages → Custom domain**, then
+   in 20i create a **CNAME** record for `academy` pointing at `typeondata.github.io`.
+
+After this, every `git push` to `main` republishes automatically — no File Manager step.
+(Note: this serves from GitHub, not 20i — pick **either** GitHub Pages **or** 20i for the live
+site, not both on the same domain.)
+
+### Option 2 — Keep 20i, auto-upload via FTP on push (GitHub Actions)
+Stay on 20i hosting but let a GitHub Action FTP the files up whenever you push.
+
+1. In 20i, create/note an **FTP** user for the site.
+2. On GitHub: **Settings → Secrets and variables → Actions** → add secrets
+   `FTP_SERVER`, `FTP_USERNAME`, `FTP_PASSWORD`.
+3. Add a workflow at `.github/workflows/deploy.yml` using a published FTP-deploy action
+   (e.g. `SamKirkland/FTP-Deploy-Action`) with `local-dir: ./public/` and the web root as
+   `server-dir`.
+
+> ⚠️ Never put FTP passwords in the code or in chat — only in GitHub **encrypted secrets**.
+
+If you want Option 2, tell me the web-root path (e.g. `public_html/` or the subdomain folder)
+and I'll write the `deploy.yml` for you — you'd just add the three secrets in GitHub.
