@@ -25,4 +25,7 @@ jobs:
           username: ${{ secrets.FTP_USERNAME }}
           password: ${{ secrets.FTP_PASSWORD }}
           local-dir: ./public/
-          server-dir: public_html/
+          # The Academy lives in its OWN folder, separate from the WordPress
+          # site in public_html/. Do NOT point this at public_html/ — that is
+          # the WordPress root and uploading there breaks the main website.
+          server-dir: public_html/academy/
