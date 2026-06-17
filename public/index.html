@@ -491,7 +491,7 @@ function loginUser(name, email) {
   document.getElementById('auth-screen').style.display = 'none';
   document.getElementById('app').style.display = 'block';
   buildSidebar();
-  showView('dashboard');
+  startCourse();   // take the learner straight into the course (next unfinished lesson)
   showToast('Welcome back, ' + name.split(' ')[0] + '! 👋');
 }
 
