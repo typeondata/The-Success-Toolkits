@@ -91,14 +91,20 @@ site, not both on the same domain.)
 ### Option 2 — Keep 20i, auto-upload via FTP on push (GitHub Actions)
 Stay on 20i hosting but let a GitHub Action FTP the files up whenever you push.
 
-1. In 20i, create/note an **FTP** user for the site.
-2. On GitHub: **Settings → Secrets and variables → Actions** → add secrets
-   `FTP_SERVER`, `FTP_USERNAME`, `FTP_PASSWORD`.
-3. Add a workflow at `.github/workflows/deploy.yml` using a published FTP-deploy action
-   (e.g. `SamKirkland/FTP-Deploy-Action`) with `local-dir: ./public/` and the web root as
-   `server-dir`.
+**The workflow is already in this repo** at [`.github/workflows/deploy.yml`](.github/workflows/deploy.yml).
+It uploads `public/` to `public_html/` on every push that touches `public/`. To switch it on, just
+add the FTP credentials as repo secrets — **one-time setup**:
+
+1. In 20i, create/note an **FTP** user for `academy.thesuccesstoolkits.com`.
+2. On GitHub: **Settings → Secrets and variables → Actions → New repository secret**, add three:
+   - `FTP_SERVER` — your 20i FTP hostname
+   - `FTP_USERNAME` — the FTP user
+   - `FTP_PASSWORD` — the FTP password
+3. Done. Next push that changes `public/` deploys automatically — or trigger it any time from the
+   **Actions** tab (the workflow has a manual "Run workflow" button).
 
 > ⚠️ Never put FTP passwords in the code or in chat — only in GitHub **encrypted secrets**.
 
-If you want Option 2, tell me the web-root path (e.g. `public_html/` or the subdomain folder)
-and I'll write the `deploy.yml` for you — you'd just add the three secrets in GitHub.
+> If 20i serves `academy.thesuccesstoolkits.com` from a subfolder rather than the package's
+> top-level `public_html/` (File Manager shows the exact path next to the subdomain), update
+> `server-dir` in the workflow to match.
